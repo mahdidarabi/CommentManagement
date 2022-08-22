@@ -1,4 +1,8 @@
 export default {
+  jwt: {
+    secret: 'secret',
+    expiresIn: '90s',
+  },
   typeorm: {
     type: 'postgres',
     port: 5432,
