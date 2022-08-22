@@ -10,6 +10,6 @@ export class AuthController {
 
   @Post('token')
   public generateToken(@Body() body: GenerateTokenDTO): Token {
-    return this.authService.generateToken(body.username);
+    return this.authService.generateToken(body.userId);
   }
 }

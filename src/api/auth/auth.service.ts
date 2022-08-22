@@ -6,15 +6,15 @@ import { Token } from './interfaces/token.interface';
 export class AuthService {
   constructor(private jwtService: JwtService) {}
 
-  generateToken(username: string): Token {
-    if (!username) {
+  generateToken(userId: string): Token {
+    if (!userId) {
       throw UnauthorizedException;
     }
 
-    const payload = { username: username };
+    const payload = { userId: userId };
 
     return {
-      username,
+      userId,
       token: this.jwtService.sign(payload),
     };
   }
