@@ -17,7 +17,6 @@ import { CommentsService } from './comments.service';
 import { CreateCommentDTO } from './dto/create-comment.dto';
 import { FindCommentsDTO } from './dto/find-comments.dto';
 import { UpdateCommentDTO } from './dto/update-comment.dto';
-import { Comment } from './entities/comment.entity';
 import { IComment } from './interfaces/comment.interface';
 
 @Controller('comments')

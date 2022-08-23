@@ -22,7 +22,7 @@ export class Comment {
   public postId: number;
 
   @DeleteDateColumn()
-  deletedAt?: Date;
+  public deletedAt?: Date;
 
   @CreateDateColumn({ type: 'timestamp' })
   public createdAt!: Date;
