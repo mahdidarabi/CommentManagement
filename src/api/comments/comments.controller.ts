@@ -13,11 +13,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
+import { PageOptionsDto } from 'src/dto/page-options.dto';
+import { PageDto } from 'src/dto/page.dto';
 import { IRequest } from 'src/interfaces/request.interface';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CommentsService } from './comments.service';
 import { CreateCommentDTO } from './dto/create-comment.dto';
-import { FindCommentsDTO } from './dto/find-comments.dto';
 import { UpdateCommentDTO } from './dto/update-comment.dto';
 import { IComment } from './interfaces/comment.interface';
 
@@ -38,8 +39,8 @@ export class CommentsController {
   @Get()
   public getComments(
     @Req() req: IRequest,
-    @Query() query: FindCommentsDTO,
-  ): Promise<IComment[]> {
+    @Query() query: PageOptionsDto,
+  ): Promise<PageDto<IComment>> {
     return this.commentService.getComments(query, req.user.userId);
   }
 

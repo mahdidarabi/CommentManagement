@@ -5,6 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PageMetaDto } from 'src/dto/page-meta.dto';
+import { PageOptionsDto } from 'src/dto/page-options.dto';
+import { PageDto } from 'src/dto/page.dto';
 import { Repository } from 'typeorm';
 import { LikesService } from '../likes/likes.service';
 import { CreateCommentDTO } from './dto/create-comment.dto';
@@ -38,17 +41,27 @@ export class CommentsService {
     return resComment;
   }
 
-  public async getComments(query: any, reqUserId: number): Promise<IComment[]> {
-    const comments = await this.repository.find({
-      where: query,
-    });
+  public async getComments(
+    pageOptionsDto: PageOptionsDto,
+    reqUserId: number,
+  ): Promise<PageDto<IComment>> {
+    const queryBuilder = this.repository.createQueryBuilder('comment');
+    console.log(pageOptionsDto);
 
-    if (!comments) throw new NotFoundException();
+    queryBuilder
+      .orderBy('comment.createdAt', pageOptionsDto.order)
+      .skip(pageOptionsDto.skip)
+      .take(pageOptionsDto.take);
+
+    const itemCount = await queryBuilder.getCount();
+    const { entities } = await queryBuilder.getRawAndEntities();
+
+    const pageMetaDto = new PageMetaDto({ itemCount, pageOptionsDto });
 
     let resComments: IComment[] = [];
 
     resComments = await Promise.all(
-      comments.map(async (comment) => {
+      entities.map(async (comment) => {
         const likesCount = await this.getLikesCount(comment.id);
         const likedByUser = await this.checkLikedByUser(comment.id, reqUserId);
 
@@ -62,7 +75,7 @@ export class CommentsService {
       }),
     );
 
-    return resComments;
+    return new PageDto(resComments, pageMetaDto);
   }
 
   public async createComment(body: CreateCommentDTO): Promise<IComment> {
