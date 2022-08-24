@@ -46,7 +46,6 @@ export class CommentsService {
     reqUserId: number,
   ): Promise<PageDto<IComment>> {
     const queryBuilder = this.repository.createQueryBuilder('comment');
-    console.log(pageOptionsDto);
 
     queryBuilder
       .orderBy('comment.createdAt', pageOptionsDto.order)
