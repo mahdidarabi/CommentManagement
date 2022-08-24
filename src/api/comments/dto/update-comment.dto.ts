@@ -1,4 +1,7 @@
+import { IsString, Length } from 'class-validator';
+
 export class UpdateCommentDTO {
-  id: number;
+  @IsString()
+  @Length(1, 120)
   content: string;
 }
