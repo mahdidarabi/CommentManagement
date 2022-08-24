@@ -10,8 +10,10 @@ import {
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { IRequest } from 'src/interfaces/request.interface';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CommentsService } from './comments.service';
 import { CreateCommentDTO } from './dto/create-comment.dto';
@@ -26,13 +28,19 @@ export class CommentsController {
   private readonly commentService: CommentsService;
 
   @Get(':id')
-  public getComment(@Param('id', ParseIntPipe) id: number): Promise<IComment> {
-    return this.commentService.getComment(id);
+  public getComment(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req: IRequest,
+  ): Promise<IComment> {
+    return this.commentService.getComment(id, req.user.userId);
   }
 
   @Get()
-  public getComments(@Query() query: FindCommentsDTO): Promise<IComment[]> {
-    return this.commentService.getComments(query);
+  public getComments(
+    @Req() req: IRequest,
+    @Query() query: FindCommentsDTO,
+  ): Promise<IComment[]> {
+    return this.commentService.getComments(query, req.user.userId);
   }
 
   @Post()
@@ -44,8 +52,9 @@ export class CommentsController {
   public updateComment(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateCommentDTO,
+    @Req() req: IRequest,
   ): Promise<IComment> {
-    return this.commentService.updateComment(id, body);
+    return this.commentService.updateComment(id, body, req.user.userId);
   }
 
   @Delete(':id/purge')

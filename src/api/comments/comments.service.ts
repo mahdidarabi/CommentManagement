@@ -1,10 +1,12 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { LikesService } from '../likes/likes.service';
 import { CreateCommentDTO } from './dto/create-comment.dto';
 import { UpdateCommentDTO } from './dto/update-comment.dto';
 import { Comment } from './entities/comment.entity';
@@ -14,16 +16,18 @@ import { IComment } from './interfaces/comment.interface';
 export class CommentsService {
   @InjectRepository(Comment)
   private readonly repository: Repository<Comment>;
+  @Inject(LikesService)
+  private readonly likesService: LikesService;
 
-  public async getComment(id: number): Promise<IComment> {
+  public async getComment(id: number, reqUserId: number): Promise<IComment> {
     const comment = await this.repository.findOne({
       where: { id },
     });
 
     if (!comment) throw new NotFoundException();
 
-    const likesCount = this.getLikesCount(comment.id);
-    const likedByUser = this.checkLikedByUser(comment.id, comment.userId);
+    const likesCount = await this.getLikesCount(comment.id);
+    const likedByUser = await this.checkLikedByUser(comment.id, reqUserId);
 
     const resComment: IComment = this.generateSendCommentObject(
       comment,
@@ -34,27 +38,29 @@ export class CommentsService {
     return resComment;
   }
 
-  public async getComments(query: any): Promise<IComment[]> {
+  public async getComments(query: any, reqUserId: number): Promise<IComment[]> {
     const comments = await this.repository.find({
       where: query,
     });
 
     if (!comments) throw new NotFoundException();
 
-    const resComments: IComment[] = [];
+    let resComments: IComment[] = [];
 
-    comments.forEach((comment) => {
-      const likesCount = this.getLikesCount(comment.id);
-      const likedByUser = this.checkLikedByUser(comment.id, comment.userId);
+    resComments = await Promise.all(
+      comments.map(async (comment) => {
+        const likesCount = await this.getLikesCount(comment.id);
+        const likedByUser = await this.checkLikedByUser(comment.id, reqUserId);
 
-      const resComment: IComment = this.generateSendCommentObject(
-        comment,
-        likesCount,
-        likedByUser,
-      );
+        const resComment: IComment = this.generateSendCommentObject(
+          comment,
+          likesCount,
+          likedByUser,
+        );
 
-      resComments.push(resComment);
-    });
+        return resComment;
+      }),
+    );
 
     return resComments;
   }
@@ -64,13 +70,10 @@ export class CommentsService {
 
     if (!comment) throw new InternalServerErrorException();
 
-    const likesCount = this.getLikesCount(comment.id);
-    const likedByUser = this.checkLikedByUser(comment.id, comment.userId);
-
     const resComment: IComment = this.generateSendCommentObject(
       comment,
-      likesCount,
-      likedByUser,
+      0,
+      false,
     );
 
     return resComment;
@@ -79,6 +82,7 @@ export class CommentsService {
   public async updateComment(
     id: number,
     body: UpdateCommentDTO,
+    reqUserId: number,
   ): Promise<IComment> {
     const execute = await this.repository.update(id, body);
 
@@ -93,8 +97,8 @@ export class CommentsService {
       where: { id },
     });
 
-    const likesCount = this.getLikesCount(comment.id);
-    const likedByUser = this.checkLikedByUser(comment.id, comment.userId);
+    const likesCount = await this.getLikesCount(comment.id);
+    const likedByUser = await this.checkLikedByUser(comment.id, reqUserId);
 
     const resComment: IComment = this.generateSendCommentObject(
       comment,
@@ -142,11 +146,14 @@ export class CommentsService {
     };
   }
 
-  private getLikesCount(refId: number): number {
-    return null;
+  private async getLikesCount(refId: number): Promise<number> {
+    return await this.likesService.getLikesCount(refId);
   }
 
-  private checkLikedByUser(refId: number, userId: number): boolean {
-    return null;
+  private async checkLikedByUser(
+    refId: number,
+    reqUserId: number,
+  ): Promise<boolean> {
+    return await this.likesService.checkLikedByUser(refId, reqUserId);
   }
 }
